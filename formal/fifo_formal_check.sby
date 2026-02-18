@@ -1,0 +1,35 @@
+[tasks]
+bmc
+cover
+prove
+
+[options]
+bmc: mode bmc
+cover: mode cover
+cover: depth 100
+prove: mode prove
+
+[engines]
+bmc: smtbmc yices
+cover: smtbmc boolector
+prove: abc pdr
+
+[script]
+read -define SINGLEPORT
+read -formal fifo_formal_check.sv
+read -formal sram_dualport.sv
+read -formal sram_singleport.sv
+read -formal fifo_dualport_with_latency.sv
+read -formal fifo_dualport.sv
+read -formal fifo_singleport.sv
+read -formal fifo_dff.sv
+prep -top fifo_formal_check
+
+[files]
+fifo_formal_check.sv
+../sram_fifo/sram_dualport.sv
+../sram_fifo/sram_singleport.sv
+../sram_fifo/fifo_dualport_with_latency.sv
+../sram_fifo/fifo_dualport.sv
+../sram_fifo/fifo_singleport.sv
+../dff_fifo/fifo_dff.sv
