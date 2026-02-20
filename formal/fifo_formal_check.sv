@@ -20,23 +20,7 @@ module fifo_formal_check #(
     logic             ref_empty;
     logic             ref_full;
 
-    `ifdef DUALPORT_WITH_LATENCY
-
-        fifo_dualport_with_latency #(
-            .WIDTH ( WIDTH ),
-            .DEPTH ( DEPTH )
-        ) fifo_dualport_with_latency (
-            .clk_i   ( clk_i   ),
-            .rst_i   ( rst_i   ),
-            .wr_en_i ( wr_en_i ),
-            .rd_en_i ( rd_en_i ),
-            .data_i  ( data_i  ),
-            .data_o  ( data_o  ),
-            .empty_o ( empty_o ),
-            .full_o  ( full_o  )
-        );
-
-    `elsif DUALPORT
+    `ifdef DUALPORT
 
         fifo_dualport #(
             .WIDTH ( WIDTH ),
@@ -112,13 +96,7 @@ module fifo_formal_check #(
                     assume(!rd_en_i);
 
                 if (empty_o)
-                    `ifdef DUALPORT_WITH_LATENCY
-                        a_empty: assert(formal_cnt == '0 ||
-                                       ($past(formal_cnt == 1 && rd_en_i && wr_en_i)) ||
-                                       ($past(formal_cnt == '0 && wr_en_i)));
-                    `else
-                        a_empty: assert(formal_cnt == '0);
-                    `endif
+                    a_empty: assert(formal_cnt == '0);
 
                 if (full_o) begin
                     a_full: assert(formal_cnt == DEPTH);
@@ -129,9 +107,6 @@ module fifo_formal_check #(
                     a_match_model: assert(data_o == ref_data);
 
                 c_empty: cover(empty_o);
-                `ifdef DUALPORT_WITH_LATENCY
-                    c_empty_rw: cover(empty_o && formal_cnt == 1);
-                `endif
                 c_full: cover(full_o);
                 c_empty_after_full: cover(was_full && empty_o);
 
