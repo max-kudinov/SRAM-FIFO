@@ -22,6 +22,8 @@ read -formal sram_singleport.sv
 read -formal fifo_dualport.sv
 read -formal fifo_singleport.sv
 read -formal fifo_dff.sv
+read -formal fifo_dualport_with_pipelined_sram.sv
+read -formal sram_dualport_latency_5.sv
 prep -top fifo_formal_check
 
 [files]
@@ -31,3 +33,5 @@ fifo_formal_check.sv
 ../sram_fifo/fifo_dualport.sv
 ../sram_fifo/fifo_singleport.sv
 ../dff_fifo/fifo_dff.sv
+../exercise/fifo_dualport_with_pipelined_sram.sv
+../exercise/sram_dualport_latency_5.sv

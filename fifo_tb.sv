@@ -1,3 +1,5 @@
+`define SINGLEPORT
+
 module fifo_tb();
     localparam CLK_PERIOD     = 10;
     localparam W_FIFO         = 10;
@@ -27,7 +29,14 @@ module fifo_tb();
     logic [W_FIFO - 1:0] fifo_in  [$];
     logic [W_FIFO - 1:0] fifo_out [$];
 
-    fifo_singleport # (
+`ifdef DUALPORT_LATENCY_5
+    fifo_dualport_with_pipelined_sram
+`elsif DUALPORT
+    fifo_dualport
+`elsif SINGLEPORT
+    fifo_singleport
+`endif
+    #(
         .WIDTH ( W_FIFO ),
         .DEPTH ( D_FIFO )
     ) DUT (

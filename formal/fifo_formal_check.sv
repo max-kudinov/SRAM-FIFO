@@ -20,43 +20,26 @@ module fifo_formal_check #(
     logic             ref_empty;
     logic             ref_full;
 
-    `ifdef DUALPORT
-
-        fifo_dualport #(
-            .WIDTH ( WIDTH ),
-            .DEPTH ( DEPTH )
-        ) fifo_dualport (
-            .clk_i   ( clk_i   ),
-            .rst_i   ( rst_i   ),
-            .wr_en_i ( wr_en_i ),
-            .rd_en_i ( rd_en_i ),
-            .data_i  ( data_i  ),
-            .data_o  ( data_o  ),
-            .empty_o ( empty_o ),
-            .full_o  ( full_o  )
-        );
-
-    `elsif SINGLEPORT
-
-        fifo_singleport #(
-            .WIDTH (WIDTH ),
-            .DEPTH (DEPTH )
-        ) fifo_singleport (
-            .clk_i   ( clk_i   ),
-            .rst_i   ( rst_i   ),
-            .wr_en_i ( wr_en_i ),
-            .rd_en_i ( rd_en_i ),
-            .data_i  ( data_i  ),
-            .data_o  ( data_o  ),
-            .empty_o ( empty_o ),
-            .full_o  ( full_o  )
-        );
-
-    `else
-
-        $error("No configuration. Define FIFO for test.");
-
-    `endif
+`ifdef DUALPORT
+    fifo_dualport
+`elsif SINGLEPORT
+    fifo_singleport
+`elsif DUALPORT_LATENCY_5
+    fifo_dualport_with_pipelined_sram
+`endif
+    #(
+        .WIDTH ( WIDTH ),
+        .DEPTH ( DEPTH )
+    ) fifo_dualport (
+        .clk_i   ( clk_i   ),
+        .rst_i   ( rst_i   ),
+        .wr_en_i ( wr_en_i ),
+        .rd_en_i ( rd_en_i ),
+        .data_i  ( data_i  ),
+        .data_o  ( data_o  ),
+        .empty_o ( empty_o ),
+        .full_o  ( full_o  )
+    );
 
     // We assume that DFF FIFO actually works and SRAM-based solutions
     // should have the same data on output
@@ -64,60 +47,60 @@ module fifo_formal_check #(
         .WIDTH ( WIDTH ),
         .DEPTH ( DEPTH )
     ) fifo_dff (
-        .clk_i         ( clk_i        ),
-        .rst_i         ( rst_i        ),
-        .wr_en_i       ( wr_en_i      ),
-        .rd_en_i       ( rd_en_i      ),
-        .data_i        ( data_i       ),
-        .data_o        ( ref_data     ),
-        .empty_o       ( ref_empty    ),
-        .full_o        ( ref_full     ),
-        .almost_full_o (              )
+        .clk_i         ( clk_i     ),
+        .rst_i         ( rst_i     ),
+        .wr_en_i       ( wr_en_i   ),
+        .rd_en_i       ( rd_en_i   ),
+        .data_i        ( data_i    ),
+        .data_o        ( ref_data  ),
+        .empty_o       ( ref_empty ),
+        .full_o        ( ref_full  ),
+        .almost_full_o (           )
     );
 
-        logic [$clog2(DEPTH+1)-1:0] formal_cnt;
-        logic was_full;
+    logic [$clog2(DEPTH+1)-1:0] formal_cnt;
+    logic was_full;
 
-        initial assume(rst_i);
+    initial assume(rst_i);
 
-        // Behavioural code, no point in always_ff
-        always @(posedge clk_i) begin
-            if (!rst_i) begin
+    // Behavioural code, no point in always_ff
+    always @(posedge clk_i) begin
+        if (!rst_i) begin
 
-                if (wr_en_i && !rd_en_i)
-                    formal_cnt <= formal_cnt + 1'b1;
-                else if (!wr_en_i && rd_en_i)
-                    formal_cnt <= formal_cnt - 1'b1;
+            if (wr_en_i && !rd_en_i)
+                formal_cnt <= formal_cnt + 1'b1;
+            else if (!wr_en_i && rd_en_i)
+                formal_cnt <= formal_cnt - 1'b1;
 
-                if (full_o && !rd_en_i)
-                    assume(!wr_en_i);
+            if (full_o && !rd_en_i)
+                assume(!wr_en_i);
 
-                if (empty_o)
-                    assume(!rd_en_i);
+            if (empty_o)
+                assume(!rd_en_i);
 
-                if (empty_o)
-                    a_empty: assert(formal_cnt == '0);
+            if (empty_o)
+                a_empty: assert(formal_cnt == '0);
 
-                if (full_o) begin
-                    a_full: assert(formal_cnt == DEPTH);
-                    was_full <= '1;
-                end
-
-                if (!empty_o)
-                    a_match_model: assert(data_o == ref_data);
-
-                c_empty: cover(empty_o);
-                c_full: cover(full_o);
-                c_empty_after_full: cover(was_full && empty_o);
-
-            end else begin
-
-                formal_cnt <= '0;
-                was_full   <= '0;
-                c_reset: cover(rst_i);
-
+            if (full_o) begin
+                a_full: assert(formal_cnt == DEPTH);
+                was_full <= '1;
             end
+
+            if (!empty_o)
+                a_match_model: assert(data_o == ref_data);
+
+            c_empty: cover(empty_o);
+            c_full: cover(full_o);
+            c_empty_after_full: cover(was_full && empty_o);
+
+        end else begin
+
+            formal_cnt <= '0;
+            was_full   <= '0;
+            c_reset: cover(rst_i);
+
         end
+    end
 
 endmodule
 
